@@ -19,7 +19,7 @@ RUN chmod +x /app/set_github_user.sh
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
 RUN uv sync --no-dev --frozen
-RUN playwright install --with-deps chromium
+RUN sudo playwright install --with-deps chromium
 
 ENTRYPOINT ["/app/app/set_github_user.sh"]
 
