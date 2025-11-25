@@ -9,6 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from tools import extract_page_data, download_file, transcribe_audio, submit_answer, exec_py, visit_website
 from langchain_core.tools import StructuredTool
 from langgraph.prebuilt import create_react_agent
+import time
 
 logger = logging.getLogger(__name__)
 set_debug(True)
@@ -20,7 +21,7 @@ async def solve_quiz(start_url: str, email: str, secret: str):
     current_url = start_url
     
     # Initialize LLM
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = ChatOpenAI(model="gpt-5-mini", temperature=0)
     
     # Tools for the solving agent
     solve_tools = [exec_py, visit_website]
@@ -28,7 +29,10 @@ async def solve_quiz(start_url: str, email: str, secret: str):
     # Tools for the extraction agent
     extraction_tools = [visit_website]
 
+    retry_count = 0
+    previously_tried_answers = []
     while current_url:
+        start_time = time.time()
         logger.info("\n" + "="*50 + f" PROCESSING URL: {current_url} " + "="*50)
         
         # --- Step 1 & 2 & 3: Agentic Visit & Extraction ---
@@ -108,6 +112,10 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         # --- Step 4: Agent Solving ---
         logger.info("[Step 4] Solving the problem...")
         
+        if len(previously_tried_answers) > 0:
+            prev_tried_str += "Following answers were tried and are wrong:\n        " + "        \n".join(previously_tried_answers)
+        else:
+            prev_tried_str = ""
         solving_prompt = f"""
         You are a generic solver agent.
         
@@ -117,6 +125,8 @@ async def solve_quiz(start_url: str, email: str, secret: str):
 
         Context:
         {context}
+
+        {prev_tried_str}
         
         You have access to a python tool `exec_py` run Python code. Use this function for reading downloaded files, doing calculations etc.
         Files are located at the paths specified in "DOWNLOADED FILES".
@@ -173,6 +183,9 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         try:
             response_json = json.loads(response_text)
             if response_json.get("correct"):
+                retry_count = 0
+                error_retry_count = 0
+                previously_tried_answers = []
                 logger.info("✅ Answer Correct!")
                 next_url = response_json.get("url")
                 if next_url:
@@ -182,9 +195,34 @@ async def solve_quiz(start_url: str, email: str, secret: str):
                     break
             else:
                 logger.warning(f"❌ Answer Incorrect: {response_json.get('reason')}")
-                break
+                end_time = time.time()
+                time_taken = end_time - start_time
+                logger.info(f"Time taken for this URL: {time_taken:.2f} seconds")
+                if time_taken < 175 and retry_count < 3:
+                    retry_count += 1
+                    previously_tried_answers.append(
+                        f"Previously tried wrong answer: {answer}. Reason: {response_json.get('reason')}"
+                    )
+                    logger.info("Retrying the same URL due to quick failure...")
+                    error_retry_count = 0
+                    continue
+                else:
+                    logger.info("Moving to next URL or ending due to retries.")
+                    next_url = response_json.get("url")
+                    previously_tried_answers = []
+                    retry_count = 0
+                    error_retry_count = 0
+                    if next_url:
+                        current_url = next_url
+                    else:
+                        logger.info("🎉 Quiz Finished!")
+                        break
         except Exception as e:
             logger.error(f"Error parsing submission response: {e}")
-            break
+            if error_retry_count < 5:
+                error_retry_count += 1
+                logger.info("Submission error - retrying the same URL")
+            else:
+                logger.info("Too many submission errors - ending process")
+                break
 
-        input("Press Enter to continue...")

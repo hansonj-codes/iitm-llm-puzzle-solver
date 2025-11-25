@@ -3,10 +3,12 @@ import logging
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from pydantic import BaseModel, HttpUrl
 from typing import Optional, Dict, Any
-from dotenv import load_dotenv
 from solver import solve_quiz
 
-load_dotenv()
+# Load .env only if running locally
+if os.getenv("SPACE_ID") is None:  # SPACE_ID is set by HF automatically
+    from dotenv import load_dotenv
+    load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -15,8 +17,8 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # Expected secret from environment variables
-EXPECTED_SECRET = os.getenv("STUDENT_SECRET", "default_secret")
-STUDENT_EMAIL = os.getenv("STUDENT_EMAIL", "student@example.com")
+EXPECTED_SECRET = os.getenv("STUDENT_SECRET")
+STUDENT_EMAIL = os.getenv("STUDENT_EMAIL")
 
 class QuizRequest(BaseModel):
     email: str
