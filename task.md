@@ -1,0 +1,24 @@
+# Quiz Solver API Tasks
+
+- [ ] Project Setup
+    - [/] Create `task.md`
+    - [x] Create `implementation_plan.md`
+    - [x] Create `requirements.txt`
+    - [x] Install dependencies
+- [ ] Core API Implementation
+    - [x] Create `main.py` with FastAPI app
+    - [x] Implement `POST /webhook` (or similar) endpoint
+    - [x] Implement secret verification middleware
+    - [x] Setup background task dispatch
+- [ ] Quiz Solver Logic (The "Brain")
+    - [x] Implement `solver.py` for the main loop
+    - [x] Setup Playwright for page rendering
+    - [x] Implement `agent.py` with LangChain
+    - [x] Create tools for the agent:
+        - [x] Web Scraper (Playwright/BS4)
+        - [x] File Downloader & Reader (PDF/CSV/Excel)
+        - [x] Data Analyzer (Pandas)
+        - [x] Visualizer (Matplotlib)
+- [ ] Verification & Testing
+    - [x] Create a mock quiz server for local testing
+    - [x] Test the full flow (Receive -> Solve -> Submit -> Recurse)
