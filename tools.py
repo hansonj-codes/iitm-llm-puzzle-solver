@@ -232,6 +232,9 @@ def exec_py(code: str) -> str:
         import re
         import datetime
         import httpx
+        import geopy
+        import fitz # pymupdf
+        import folium
         
         # VERY simple sandbox: provide only safe modules
         safe_globals = {
@@ -245,7 +248,11 @@ def exec_py(code: str) -> str:
             "math": math,
             "re": re,
             "datetime": datetime,
-            "httpx": httpx
+            "httpx": httpx,
+            "geopy": geopy,
+            "fitz": fitz,
+            "pymupdf": fitz, # alias
+            "folium": folium
         }
         
         exec(code, safe_globals)

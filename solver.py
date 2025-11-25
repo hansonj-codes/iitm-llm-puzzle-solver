@@ -43,8 +43,7 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         Return a JSON object with:
         - "submission_url": The URL to submit to - MAKE SURE ITS THE FULL URL AND NOT RELATIVE.
         - "json_format": A sample JSON of what needs to be submitted (keys and value types).
-        - "question": The specific question asked in the quiz. Your question will be used to run a solver agent. But the solver agent should not POST the final answer to the submission URL. So, amend the question in such a way that the final submission by POST is not present.
-        
+        - "question": The specific question asked in the quiz. Your question will be used to run a solver agent.
         Return ONLY valid JSON.
         """
         
@@ -130,14 +129,24 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         
         Calculate the answer.
         
-        Return ONLY the answer value. It could be a number, string, or boolean or a json.
-        Just return the raw answer.
+        Return ONLY the answer value encapsulated in a json. It could be a number, string, or boolean or a json.
+
+        Example: {{"answer": 42}}
+        Example: {{"answer": "Paris"}}
+        Example: {{"answer": true}}
+        Example: {{"answer": {{"space": "Earth"}}}}
         """
         
         agent = create_react_agent(llm, solve_tools)
         
         result = await agent.ainvoke({"messages": [HumanMessage(content=solving_prompt)]})
-        answer = result["messages"][-1].content.strip()
+        answer_str = result["messages"][-1].content.strip()
+        try:
+            answer_json = json.loads(answer_str)
+            answer = answer_json.get("answer")
+        except:
+            logger.error(f"Error parsing answer: {answer_str}, using as is")
+            answer = answer_str
         logger.info(f"[Step 4 Result] Answer: {answer}")
 
         # --- Step 5: Submission ---
