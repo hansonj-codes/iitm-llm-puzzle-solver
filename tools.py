@@ -8,6 +8,7 @@ from playwright.async_api import async_playwright
 import logging
 from openai import OpenAI
 import uuid
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +170,7 @@ def transcribe_audio(file_path: str) -> str:
         logger.error(f"Error transcribing audio: {e}")
         return f"Error transcribing audio: {e}"
 
-def submit_answer(submission_url: str, payload: dict, cookies: list = None) -> str:
+def submit_answer(submission_url: str, payload: dict, cookies: list = None, referer: str = None) -> str:
     """
     Submits the answer to the quiz.
     """
@@ -179,7 +180,9 @@ def submit_answer(submission_url: str, payload: dict, cookies: list = None) -> s
             'Content-Type': 'application/json',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
-        
+        if referer:
+            headers['Referer'] = referer
+            
         # Convert Playwright cookies (list of dicts) to Requests cookies (dict)
         req_cookies = {}
         if cookies:
@@ -197,16 +200,111 @@ def submit_answer(submission_url: str, payload: dict, cookies: list = None) -> s
 # These are wrappers for the agent to use if needed, 
 # but the main flow will use the functions above directly.
 
-@tool
-def python_repl(code: str):
+@tool("exec_py", return_direct=False)
+def exec_py(code: str) -> str:
     """
-    Executes Python code. Use this to analyze data, read files, and perform calculations.
+    Execute user-provided Python code in a restricted namespace.
+    
+    Pre-imported modules available in the namespace:
+    - pd (pandas)
+    - np (numpy)
+    - json
+    - math
+    - re
+    - datetime
+    - httpx
+    
+    You do NOT need to import these.
+    
+    IMPORTANT: Assign the final answer/result to a variable named `result`.
+    Example:
+    result = pd.read_csv('file.csv').mean()
+    """
+    # Do not allow import statements — you can detect that and reject
+    if "import " in code:
+        return "Rejected: import statements are not allowed. Use pre-imported modules: pd, np, json, math, re, datetime, httpx."
+
+    try:
+        import pandas as pd
+        import numpy as np
+        import json
+        import math
+        import re
+        import datetime
+        import httpx
+        
+        # VERY simple sandbox: provide only safe modules
+        safe_globals = {
+            "__builtins__": {
+                "len": len, "range": range, "print": print, "min": min, "max": max,
+                "int": int, "float": float, "str": str, "list": list, "dict": dict, "set": set, "open": open
+            },
+            "pd": pd,
+            "np": np,
+            "json": json,
+            "math": math,
+            "re": re,
+            "datetime": datetime,
+            "httpx": httpx
+        }
+        
+        exec(code, safe_globals)
+        # convention: user sets variable `result`
+        return str(safe_globals.get("result", "Code executed successfully, but no 'result' variable was set."))
+    except Exception as e:
+        return f"Error: {e}"
+
+@tool("visit_website", return_direct=False)
+async def visit_website(url: str) -> str:
+    """
+    Visits a website, extracts text, downloads files/media, and transcribes audio.
+    Returns a comprehensive context string containing page content, file paths, and transcriptions.
     """
     try:
-        # This is a simplified REPL. In a real scenario, use LangChain's PythonREPLTool
-        # But for this refactor, we can just use the one from langchain_experimental
-        from langchain_experimental.utilities import PythonREPL
-        repl = PythonREPL()
-        return repl.run(code)
+        logger.info(f"Agent visiting: {url}")
+        page_data = await extract_page_data(url)
+        page_text = page_data["text"]
+        cookies = page_data.get("cookies", [])
+        
+        downloaded_files = []
+        
+        # Download Media
+        for media_link in page_data["media_links"]:
+            path = download_file(media_link)
+            if "Error" not in path:
+                downloaded_files.append({"type": "media", "path": path, "url": media_link})
+        
+        # Download Other Files
+        for file_link in page_data["file_links"]:
+            if file_link.lower().endswith(('.csv', '.json', '.pdf', '.xlsx', '.txt')):
+                path = download_file(file_link)
+                if "Error" not in path:
+                    downloaded_files.append({"type": "file", "path": path, "url": file_link})
+
+        # Audio Transcription
+        transcriptions = []
+        for f in downloaded_files:
+            if f["type"] == "media":
+                logger.info(f"Transcribing audio: {f['path']}")
+                text = transcribe_audio(f["path"])
+                transcriptions.append(f"Transcription of {f['url']}:\n{text}")
+        
+        # Prepare context
+        context = f"""
+        --- PAGE CONTENT ---
+        {page_text}
+        
+        --- DOWNLOADED FILES ---
+        {json.dumps(downloaded_files, indent=2)}
+        
+        --- AUDIO TRANSCRIPTIONS ---
+        {chr(10).join(transcriptions)}
+        
+        --- COOKIES ---
+        {json.dumps(cookies)}
+        """
+        
+        return context
     except Exception as e:
-        return f"Error executing code: {e}"
+        logger.error(f"Error in visit_website: {e}")
+        return f"Error visiting website: {e}"

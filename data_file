@@ -1,0 +1,16 @@
+POST this JSON to <span class="origin"></span>/submit
+
+<pre>
+{
+  "email": "your email",
+  "secret": "your secret",
+  "url": "<span class="origin"></span>/demo",
+  "answer": "anything you want"
+}
+</pre>
+
+<script type="module">
+for (const el of document.querySelectorAll(".origin")) {
+  el.innerHTML = window.location.origin;
+}
+</script>
