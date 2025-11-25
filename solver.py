@@ -119,12 +119,12 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         Context:
         {context}
         
-        You have access to a python tool `exec_py` to analyze any downloaded files.
+        You have access to a python tool `exec_py` run Python code. Use this function for reading downloaded files, doing calculations etc.
         Files are located at the paths specified in "DOWNLOADED FILES".
         To visit a website, you can you Use the `visit_website` tool
         
         When using `exec_py`:
-        - You do NOT need to import pandas (pd), numpy (np), json, math, re, datetime, or httpx. They are pre-imported.
+        - You do NOT need to import pandas (pd), numpy (np), json, math, re, datetime, geopy, fitz, pymupdf, folium, or httpx. They are pre-imported.
         - You MUST assign your final answer to a variable named `result`.
         - Example: result = pd.read_csv('file.csv')['value'].mean()
         
