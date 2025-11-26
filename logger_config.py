@@ -26,7 +26,7 @@ class JSONFormatter(logging.Formatter):
             
         return json.dumps(log_record)
 
-def setup_logging(log_dir="logs", log_file="app.jsonl", max_bytes=100*1024, backup_count=10):
+def setup_logging(log_dir="logs", log_file="app.jsonl", max_bytes=500*1024, backup_count=10):
     """
     Sets up logging to a rotating JSONL file.
     """
