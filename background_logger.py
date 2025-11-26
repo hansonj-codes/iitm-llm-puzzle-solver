@@ -49,8 +49,8 @@ async def start_periodic_upload(log_dir="logs", log_file="app.jsonl", interval=6
                 last_modified = os.path.getmtime(active_log_path)
                 file_size = os.path.getsize(active_log_path)
                 
-                # If file has content of at least 5KB and hasn't been touched in 15 minutes (900 seconds)
-                if file_size > 5*1024 and (time.time() - last_modified) > 900:
+                # If file has content of at least 10KB and hasn't been touched in 15 minutes (900 seconds)
+                if file_size > 10*1024 and (time.time() - last_modified) > 900:
                     logger.info("Active log file is stale. Forcing rotation.")
                     # Find the rotating handler and force rollover
                     root_logger = logging.getLogger()

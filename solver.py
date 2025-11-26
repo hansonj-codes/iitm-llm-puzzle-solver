@@ -242,6 +242,6 @@ async def solve_quiz(start_url: str, email: str, secret: str):
     
     logger.info("Request completed!")
     ## Buffering to ensure that the last log is written to the HF dataset
-    for _ in range(50):
+    for _ in range(100):
         logger.info("0"*104+"\n")
 
