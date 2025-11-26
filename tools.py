@@ -170,6 +170,61 @@ def transcribe_audio(file_path: str) -> str:
         logger.error(f"Error transcribing audio: {e}")
         return f"Error transcribing audio: {e}"
 
+def ocr_image(image_path: str) -> str:
+    """
+    Performs OCR on an image using OpenAI's vision model.
+    Returns the extracted text from the image.
+    """
+    try:
+        logger.info(f"Performing OCR on image: {image_path}")
+        
+        import base64
+        
+        # Read and encode the image
+        with open(image_path, "rb") as image_file:
+            image_data = base64.b64encode(image_file.read()).decode('utf-8')
+        
+        # Determine the image format
+        ext = os.path.splitext(image_path)[1].lower()
+        mime_types = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp'
+        }
+        mime_type = mime_types.get(ext, 'image/jpeg')
+        
+        client = OpenAI()
+        response = client.chat.completions.create(
+            model="gpt-5",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Extract all text from this image. Return only the text content, nothing else."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{image_data}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=1000
+        )
+        
+        text = response.choices[0].message.content
+        logger.info(f"OCR result: {text}")
+        return text
+    except Exception as e:
+        logger.error(f"Error performing OCR: {e}")
+        return f"Error performing OCR: {e}"
+
 def submit_answer(submission_url: str, payload: dict, cookies: list = None, referer: str = None) -> str:
     """
     Submits the answer to the quiz.
@@ -235,6 +290,10 @@ def exec_py(code: str) -> str:
         import geopy
         import fitz # pymupdf
         import folium
+        import scipy
+        import sknetwork
+        import networkx
+        from PIL import Image, ImageDraw, ImageFont
         
         # VERY simple sandbox: provide only safe modules
         safe_builtins = {
@@ -295,7 +354,13 @@ def exec_py(code: str) -> str:
             "geopy": geopy,
             "fitz": fitz,
             "pymupdf": fitz, # alias
-            "folium": folium
+            "folium": folium,
+            "scipy": scipy,
+            "sknetwork": sknetwork,
+            "networkx": networkx,
+            "Image": Image,
+            "ImageDraw": ImageDraw,
+            "ImageFont": ImageFont
         }
         
         exec(code, safe_globals)

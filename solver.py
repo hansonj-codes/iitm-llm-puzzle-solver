@@ -7,7 +7,7 @@ from langchain_core.globals import set_debug
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
-from tools import extract_page_data, download_file, transcribe_audio, submit_answer, exec_py, visit_website
+from tools import extract_page_data, download_file, transcribe_audio, ocr_image, submit_answer, exec_py, visit_website
 from langchain_core.tools import StructuredTool
 from langgraph.prebuilt import create_react_agent
 import time
@@ -26,7 +26,7 @@ async def solve_quiz(start_url: str, email: str, secret: str):
     logger.info(f"Using LLM model: {os.getenv('LLM_MODEL', 'gpt-5-mini')}")
     
     # Tools for the solving agent
-    solve_tools = [exec_py, visit_website]
+    solve_tools = [exec_py, visit_website, transcribe_audio, ocr_image]
     
     # Tools for the extraction agent
     extraction_tools = [visit_website]
@@ -133,9 +133,13 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         You have access to a python tool `exec_py` run Python code. Use this function for reading downloaded files, doing calculations etc.
         Files are located at the paths specified in "DOWNLOADED FILES".
         To visit a website, you can you Use the `visit_website` tool
+        To transcribe audio, use the `transcribe_audio` tool: transcribe_audio(file_path: str) -> str
+        To extract text from images, use the `ocr_image` tool: ocr_image(image_path: str) -> str
         
         When using `exec_py`:
-        - You do NOT need to import pandas (pd), numpy (np), json, math, re, datetime, geopy, fitz, pymupdf, folium, or httpx. They are pre-imported.
+        - You do NOT need to import pandas (pd), numpy (np), json, math, re, datetime, geopy, fitz, pymupdf, folium, httpx, scipy, scikit-network (sknetwork) or networkx. They are pre-imported.
+        - You do NOT need to import PIL. It is pre-imported as Image, ImageDraw, ImageFont.
+        - For scraping, try using the `visit_website` tool for website visits first, but for API requests use `httpx` with `exec_py` tool.
         - You MUST assign your final answer to a variable named `result`.
         - Example: result = pd.read_csv('file.csv')['value'].mean()
         
