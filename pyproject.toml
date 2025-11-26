@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "beautifulsoup4>=4.14.2",
+    "dotenv>=0.9.9",
     "fastapi>=0.122.0",
     "folium>=0.20.0",
     "geopy>=2.4.1",

@@ -21,7 +21,7 @@ ENV UV_TOOL_BIN_DIR=/usr/local/bin
 RUN uv sync --no-dev --frozen
 RUN python -m playwright install chromium
 
-ENTRYPOINT ["/app/app/set_github_user.sh"]
+ENTRYPOINT ["/app/set_github_user.sh"]
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7777"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7777"]
 EXPOSE 7777
