@@ -1,6 +1,10 @@
 import os
 import logging
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.status import HTTP_400_BAD_REQUEST
 from pydantic import BaseModel, HttpUrl
 from typing import Optional, Dict, Any
 from solver import solve_quiz
@@ -15,6 +19,23 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+@app.exception_handler(RequestValidationError)
+async def invalid_json_handler(request, exc):
+    return JSONResponse(
+        status_code=HTTP_400_BAD_REQUEST,
+        content={"detail": "Invalid JSON payload"},
+    )
+
+# Allow CORS for all origins (modify as needed)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
 
 # Expected secret from environment variables
 EXPECTED_SECRET = os.getenv("STUDENT_SECRET")
