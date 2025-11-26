@@ -2,7 +2,7 @@ FROM ghcr.io/astral-sh/uv:python3.11-trixie-slim
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y git libglib2.0-0t64 libnspr4 libnss3 libdbus-1-3 libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libxkbcommon0 libatspi2.0-0t64 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libcairo2 libpango-1.0-0 libasound2t64 && \
+    apt-get install -y git ffmpeg   libjpeg-dev zlib1g-dev libtiff-dev libfreetype6-dev   libglib2.0-0t64 libnspr4 libnss3 libdbus-1-3 libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libxkbcommon0 libatspi2.0-0t64 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libcairo2 libpango-1.0-0 libasound2t64 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
