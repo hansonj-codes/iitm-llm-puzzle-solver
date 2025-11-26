@@ -2,6 +2,7 @@ import asyncio
 import logging
 import json
 import os
+import pdb
 from langchain_core.globals import set_debug
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
@@ -150,6 +151,7 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         agent = create_react_agent(llm, solve_tools)
         
         result = await agent.ainvoke({"messages": [HumanMessage(content=solving_prompt)]})
+        # pdb.set_trace()
         answer_str = result["messages"][-1].content.strip()
         try:
             answer_json = json.loads(answer_str)

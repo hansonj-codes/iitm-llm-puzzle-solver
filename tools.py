@@ -237,11 +237,54 @@ def exec_py(code: str) -> str:
         import folium
         
         # VERY simple sandbox: provide only safe modules
+        safe_builtins = {
+            # Basic types / constructors
+            "int": int,
+            "float": float,
+            "complex": complex,
+            "str": str,
+            "bytes": bytes,
+            "bytearray": bytearray,
+            "bool": bool,
+            "list": list,
+            "tuple": tuple,
+            "set": set,
+            "frozenset": frozenset,
+            "dict": dict,
+
+            # Basic object helpers (non-reflective)
+            "len": len,
+            "abs": abs,
+            "min": min,
+            "max": max,
+            "sum": sum,
+            "round": round,
+            "sorted": sorted,
+            "reversed": reversed,
+            "enumerate": enumerate,
+            "range": range,
+            "zip": zip,
+            "map": map,
+            "filter": filter,
+
+            # predicates / small utilities
+            "all": all,
+            "any": any,
+            "isinstance": isinstance,
+            "issubclass": issubclass,
+
+            # conversions (safe)
+            "ord": ord,
+            "chr": chr,
+            "hex": hex,
+            "oct": oct,
+
+            # small helpers
+            "print": print,           # keep for debugging (stdout capture recommended)
+            "repr": repr,
+        }
         safe_globals = {
-            "__builtins__": {
-                "len": len, "range": range, "print": print, "min": min, "max": max,
-                "int": int, "float": float, "str": str, "list": list, "dict": dict, "set": set, "open": open
-            },
+            "__builtins__": safe_builtins,
             "pd": pd,
             "np": np,
             "json": json,
