@@ -22,7 +22,8 @@ async def solve_quiz(start_url: str, email: str, secret: str):
     current_url = start_url
     
     # Initialize LLM
-    llm = ChatOpenAI(model="gpt-5-mini", temperature=0)
+    llm = ChatOpenAI(model=os.getenv("LLM_MODEL", "gpt-5-mini"), temperature=0)
+    logger.info(f"Using LLM model: {os.getenv('LLM_MODEL', 'gpt-5-mini')}")
     
     # Tools for the solving agent
     solve_tools = [exec_py, visit_website]
