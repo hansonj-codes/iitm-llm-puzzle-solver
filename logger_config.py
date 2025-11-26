@@ -36,7 +36,7 @@ def setup_logging(log_dir="logs", log_file="app.jsonl", max_bytes=100*1024, back
     log_path = os.path.join(log_dir, log_file)
     
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     
     # Remove existing handlers to avoid duplicates if called multiple times
     for handler in logger.handlers[:]:

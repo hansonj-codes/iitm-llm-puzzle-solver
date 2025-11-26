@@ -307,9 +307,10 @@ def exec_py(code: str) -> str:
     """
     # Do not allow import statements — you can detect that and reject
     if "import " in code:
-        return "Rejected: import statements are not allowed. Use pre-imported modules: pd, np, json, math, re, datetime, httpx."
+        return "Rejected: import statements are not allowed. Use pre-imported modules: pd, np, json, math, re, datetime, httpx, base64, geopy etc."
 
     try:
+        import base64
         import pandas as pd
         import numpy as np
         import json
@@ -375,6 +376,7 @@ def exec_py(code: str) -> str:
         safe_globals = {
             "__builtins__": safe_builtins,
             "pd": pd,
+            "base64": base64,
             "np": np,
             "json": json,
             "math": math,

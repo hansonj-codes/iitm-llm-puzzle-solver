@@ -33,8 +33,8 @@ async def solve_quiz(start_url: str, email: str, secret: str):
 
     retry_count = 0
     previously_tried_answers = []
+    start_time = time.time()
     while current_url:
-        start_time = time.time()
         logger.info("\n" + "="*50 + f" PROCESSING URL: {current_url} " + "="*50)
         
         # --- Step 1 & 2 & 3: Agentic Visit & Extraction ---
@@ -200,6 +200,7 @@ async def solve_quiz(start_url: str, email: str, secret: str):
                 next_url = response_json.get("url")
                 if next_url:
                     current_url = next_url
+                    start_time = time.time()
                 else:
                     logger.info("🎉 Quiz Finished!")
                     break
@@ -208,7 +209,9 @@ async def solve_quiz(start_url: str, email: str, secret: str):
                 end_time = time.time()
                 time_taken = end_time - start_time
                 logger.info(f"Time taken for this URL: {time_taken:.2f} seconds")
-                if time_taken < 175 and retry_count < 3:
+                avg_time_taken = (time_taken/(retry_count+1))
+                approx_time_if_retry = time_taken + avg_time_taken
+                if ((time_taken < 150) and (retry_count < 3) and (approx_time_if_retry < 180)) or (next_url == None) or (next_url.strip() == ''):
                     retry_count += 1
                     previously_tried_answers.append(
                         f"Previously tried wrong answer: {answer}. Reason: {response_json.get('reason')}"
@@ -224,6 +227,7 @@ async def solve_quiz(start_url: str, email: str, secret: str):
                     error_retry_count = 0
                     if next_url:
                         current_url = next_url
+                        start_time = time.time()
                     else:
                         logger.info("🎉 Quiz Finished!")
                         break
@@ -235,4 +239,9 @@ async def solve_quiz(start_url: str, email: str, secret: str):
             else:
                 logger.info("Too many submission errors - ending process")
                 break
+    
+    logger.info("Request completed!")
+    ## Buffering to ensure that the last log is written to the HF dataset
+    for _ in range(50):
+        logger.info("0"*104+"\n")
 
