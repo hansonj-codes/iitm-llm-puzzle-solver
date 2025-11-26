@@ -49,3 +49,7 @@ async def run_quiz(request: QuizRequest, background_tasks: BackgroundTasks):
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+@app.get("/")
+def health_check2():
+    return {"status": "healthy"}
