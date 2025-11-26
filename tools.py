@@ -225,6 +225,36 @@ def ocr_image(image_path: str) -> str:
         logger.error(f"Error performing OCR: {e}")
         return f"Error performing OCR: {e}"
 
+def read_text(file_path: str) -> str:
+    """
+    Reads a text file and returns its content.
+    """
+    try:
+        logger.info(f"Reading text file: {file_path}")
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        logger.info(f"Successfully read {len(content)} characters from {file_path}")
+        return content
+    except Exception as e:
+        logger.error(f"Error reading text file: {e}")
+        return f"Error reading text file: {e}"
+
+def read_binary(file_path: str) -> str:
+    """
+    Reads a binary file, encodes it as base64, and returns the encoded string.
+    """
+    try:
+        import base64
+        logger.info(f"Reading binary file: {file_path}")
+        with open(file_path, 'rb') as f:
+            binary_data = f.read()
+        encoded = base64.b64encode(binary_data).decode('utf-8')
+        logger.info(f"Successfully encoded {len(binary_data)} bytes from {file_path}")
+        return encoded
+    except Exception as e:
+        logger.error(f"Error reading binary file: {e}")
+        return f"Error reading binary file: {e}"
+
 def submit_answer(submission_url: str, payload: dict, cookies: list = None, referer: str = None) -> str:
     """
     Submits the answer to the quiz.

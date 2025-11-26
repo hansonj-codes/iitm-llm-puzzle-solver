@@ -7,7 +7,7 @@ from langchain_core.globals import set_debug
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
-from tools import extract_page_data, download_file, transcribe_audio, ocr_image, submit_answer, exec_py, visit_website
+from tools import extract_page_data, download_file, transcribe_audio, ocr_image, read_text, read_binary, submit_answer, exec_py, visit_website
 from langchain_core.tools import StructuredTool
 from langgraph.prebuilt import create_react_agent
 import time
@@ -26,7 +26,7 @@ async def solve_quiz(start_url: str, email: str, secret: str):
     logger.info(f"Using LLM model: {os.getenv('LLM_MODEL', 'gpt-5-mini')}")
     
     # Tools for the solving agent
-    solve_tools = [exec_py, visit_website, transcribe_audio, ocr_image]
+    solve_tools = [exec_py, visit_website, transcribe_audio, ocr_image, read_text, read_binary]
     
     # Tools for the extraction agent
     extraction_tools = [visit_website]
@@ -122,6 +122,7 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         You are a generic solver agent.
         
         Task: {submission_details.get('question')}
+        If the question is not clear, you might need to process the downloaded files to understand the question.
         
         If you get a relative URL, use the base URL to make it absolute. Base URL: {current_url}
 
@@ -135,6 +136,8 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         To visit a website, you can you Use the `visit_website` tool
         To transcribe audio, use the `transcribe_audio` tool: transcribe_audio(file_path: str) -> str
         To extract text from images, use the `ocr_image` tool: ocr_image(image_path: str) -> str
+        To read text files, use the `read_text` tool: read_text(file_path: str) -> str
+        To read binary files as base64, use the `read_binary` tool: read_binary(file_path: str) -> str
         
         When using `exec_py`:
         - You do NOT need to import pandas (pd), numpy (np), json, math, re, datetime, geopy, fitz, pymupdf, folium, httpx, scipy, scikit-network (sknetwork) or networkx. They are pre-imported.
