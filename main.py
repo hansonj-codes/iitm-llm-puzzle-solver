@@ -9,16 +9,32 @@ from pydantic import BaseModel, HttpUrl
 from typing import Optional, Dict, Any
 from solver import solve_quiz
 
+from contextlib import asynccontextmanager
+from logger_config import setup_logging
+from background_logger import start_periodic_upload
+import asyncio
+
 # Load .env only if running locally
 if os.getenv("SPACE_ID") is None:  # SPACE_ID is set by HF automatically
     from dotenv import load_dotenv
     load_dotenv()
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = setup_logging()
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start background log uploader
+    task = asyncio.create_task(start_periodic_upload())
+    yield
+    # Cancel task on shutdown (optional, but good practice)
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+
+app = FastAPI(lifespan=lifespan)
 
 @app.exception_handler(RequestValidationError)
 async def invalid_json_handler(request, exc):
