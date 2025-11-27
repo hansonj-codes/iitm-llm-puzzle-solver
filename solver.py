@@ -29,7 +29,7 @@ async def solve_quiz(start_url: str, email: str, secret: str):
     solve_tools = [exec_py, visit_website, transcribe_audio, ocr_image, read_text, read_binary]
     
     # Tools for the extraction agent
-    extraction_tools = [visit_website]
+    extraction_tools = [visit_website, read_text]
 
     retry_count = 0
     previously_tried_answers = []

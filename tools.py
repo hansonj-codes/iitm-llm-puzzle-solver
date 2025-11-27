@@ -64,13 +64,21 @@ async def extract_page_data(url: str):
             media_links = [requests.compat.urljoin(url, src) for src in set(media_links)]
             file_links = [requests.compat.urljoin(url, src) for src in set(file_links)]
             
+            # Save HTML content to file
+            source_filename = f"source_{uuid.uuid4()}.html"
+            source_path = os.path.join(os.getcwd(), source_filename)
+            with open(source_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            logger.info(f"Saved page source to: {source_path}")
+
             cookies = await context.cookies()
             
             return {
                 "text": text,
                 "media_links": media_links,
                 "file_links": file_links,
-                "cookies": cookies
+                "cookies": cookies,
+                "source_path": source_path
             }
 
         except Exception as e:
@@ -411,6 +419,7 @@ async def visit_website(url: str) -> str:
         logger.info(f"Agent visiting: {url}")
         page_data = await extract_page_data(url)
         page_text = page_data["text"]
+        source_path = page_data.get("source_path", "")
         cookies = page_data.get("cookies", [])
         
         downloaded_files = []
@@ -447,6 +456,10 @@ async def visit_website(url: str) -> str:
         --- AUDIO TRANSCRIPTIONS ---
         {chr(10).join(transcriptions)}
         
+        --- PAGE SOURCE ---
+        Path: {source_path}
+        Instruction: You can read this file using the read_text tool if you need to inspect the HTML source code.
+
         --- COOKIES ---
         {json.dumps(cookies)}
         """
