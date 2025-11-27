@@ -11,7 +11,7 @@ from solver import solve_quiz
 
 from contextlib import asynccontextmanager
 from logger_config import setup_logging
-from background_logger import start_periodic_upload
+from background_logger import start_periodic_upload, upload_files_to_hf
 import asyncio
 
 # Load .env only if running locally
@@ -55,6 +55,7 @@ app.add_middleware(
 
 # Expected secret from environment variables
 EXPECTED_SECRET = os.getenv("STUDENT_SECRET")
+ADMIN_SECRET = os.getenv("ADMIN_SECRET")
 STUDENT_EMAIL = os.getenv("STUDENT_EMAIL")
 
 class QuizRequest(BaseModel):
@@ -82,6 +83,54 @@ async def run_quiz(request: QuizRequest, background_tasks: BackgroundTasks):
     background_tasks.add_task(solve_quiz, str(request.url), request.email, request.secret)
 
     return {"message": "Quiz processing started", "status": "ok"}
+
+class ListFilesRequest(BaseModel):
+    path: str
+    recursive: bool = False
+    admin_secret: str
+
+@app.post("/list-files")
+async def list_files(request: ListFilesRequest):
+    """
+    Lists files and folders at the specified path.
+    """
+    if request.admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+
+    base_path = os.path.abspath(request.path)
+    if not os.path.exists(base_path):
+        raise HTTPException(status_code=404, detail="Path not found")
+
+    file_list = []
+    
+    if request.recursive:
+        for root, dirs, files in os.walk(base_path):
+            for name in files:
+                file_list.append(os.path.join(root, name))
+            for name in dirs:
+                file_list.append(os.path.join(root, name))
+    else:
+        for item in os.listdir(base_path):
+            file_list.append(os.path.join(base_path, item))
+            
+    return {"files": file_list}
+
+class UploadFilesRequest(BaseModel):
+    paths: list[str]
+    folder_name: str
+    admin_secret: str
+
+@app.post("/upload-files")
+async def upload_files(request: UploadFilesRequest, background_tasks: BackgroundTasks):
+    """
+    Uploads a list of files to the HF dataset.
+    """
+    if request.admin_secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid admin secret")
+
+    background_tasks.add_task(upload_files_to_hf, request.paths, request.folder_name)
+    
+    return {"message": "File upload started", "status": "ok"}
 
 @app.get("/health")
 def health_check():

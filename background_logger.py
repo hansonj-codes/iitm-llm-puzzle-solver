@@ -99,3 +99,38 @@ async def start_periodic_upload(log_dir="logs", log_file="app.jsonl", interval=6
         except Exception as e:
             logger.error(f"Error in background upload loop: {e}")
             # Don't crash the loop, just wait for next interval
+
+def upload_files_to_hf(file_paths: list, folder_name: str):
+    """
+    Uploads a list of files to the configured HF dataset under a specific folder.
+    """
+    hf_token = os.getenv("HF_TOKEN")
+    repo_id = os.getenv("HF_LOG_DATASET")
+    
+    if not hf_token or not repo_id:
+        logger.warning("HF_TOKEN or HF_LOG_DATASET not set. Upload skipped.")
+        return
+
+    api = HfApi(token=hf_token)
+    
+    logger.info(f"Starting batch upload of {len(file_paths)} files to {repo_id}/{folder_name}")
+    
+    for file_path in file_paths:
+        try:
+            if not os.path.exists(file_path):
+                logger.warning(f"File not found: {file_path}")
+                continue
+                
+            filename = os.path.basename(file_path)
+            path_in_repo = f"{folder_name}/{filename}"
+            
+            api.upload_file(
+                path_or_fileobj=file_path,
+                path_in_repo=path_in_repo,
+                repo_id=repo_id,
+                repo_type="dataset"
+            )
+            logger.info(f"Uploaded {file_path} to {path_in_repo}")
+        except Exception as e:
+            logger.error(f"Failed to upload {file_path}: {e}")
+
