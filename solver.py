@@ -148,12 +148,13 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         
         Calculate the answer.
         
-        Return ONLY the answer value encapsulated in a json. It could be a number, string, or boolean or a json.
+        Return ONLY the answer value encapsulated in a JSON. It could be a boolean, number, string, base64 URI of a file attachment, or a json object with a combination of these.
 
         Example: {{"answer": 42}}
         Example: {{"answer": "Paris"}}
         Example: {{"answer": true}}
         Example: {{"answer": {{"space": "Earth"}}}}
+        Example: {{"answer": "d2F0ZXI="}}
         """
         
         agent = create_react_agent(llm, solve_tools)
