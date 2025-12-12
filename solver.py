@@ -26,7 +26,7 @@ async def solve_quiz(start_url: str, email: str, secret: str):
     logger.info(f"Using LLM model: {os.getenv('LLM_MODEL', 'gpt-5-mini')}")
     
     # Tools for the solving agent
-    solve_tools = [exec_py, visit_website, transcribe_audio, ocr_image, read_text, read_binary]
+    solve_tools = [exec_py, visit_website, download_file, transcribe_audio, ocr_image, read_text, read_binary]
     
     # Tools for the extraction agent
     extraction_tools = [visit_website, read_text]
@@ -45,6 +45,8 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         1. Use the `visit_website` tool to visit {current_url}.
         2. Analyze the content returned by the tool.
         3. Extract the submission URL and the required JSON format.
+        4. User email is - {email}
+        5. User secret is - {secret}
         
         Return a JSON object with:
         - "submission_url": The URL to submit to - MAKE SURE ITS THE FULL URL AND NOT RELATIVE.
@@ -54,7 +56,10 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         """
         
         agent = create_react_agent(llm, extraction_tools)
-        result = await agent.ainvoke({"messages": [HumanMessage(content=extraction_prompt)]})
+        result = await agent.ainvoke(
+            {"messages": [HumanMessage(content=extraction_prompt)]},
+            config={"recursion_limit": 100}
+        )
         
         # Capture Context from Tool Output
         context = ""
@@ -126,25 +131,87 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         
         If you get a relative URL, use the base URL to make it absolute. Base URL: {current_url}
 
+        IMPORTANT CREDENTIALS:
+        - Your email is: {email}
+        - Your secret is: {secret}
+        - When making HTTP requests or submissions, ALWAYS use these credentials, NOT hardcoded values.
+
         Context:
         {context}
 
         {prev_tried_str}
         
-        You have access to a python tool `exec_py` run Python code. Use this function for reading downloaded files, doing calculations etc.
+        You have access to the following tools:
+        - `exec_py`: Run Python code. Use this for calculations, data processing, etc.
+        - `visit_website`: Visit a website and get its content
+        - `download_file`: Download a file from a URL: download_file(url: str, filename: str = None) -> str (returns local file path)
+        - `transcribe_audio`: Transcribe audio file: transcribe_audio(file_path: str) -> str
+        - `ocr_image`: Extract text from images: ocr_image(image_path: str) -> str
+        - `read_text`: Read text files: read_text(file_path: str) -> str
+        - `read_binary`: Read binary files as base64: read_binary(file_path: str) -> str
+        
         Files are located at the paths specified in "DOWNLOADED FILES".
-        To visit a website, you can you Use the `visit_website` tool
-        To transcribe audio, use the `transcribe_audio` tool: transcribe_audio(file_path: str) -> str
-        To extract text from images, use the `ocr_image` tool: ocr_image(image_path: str) -> str
-        To read text files, use the `read_text` tool: read_text(file_path: str) -> str
-        To read binary files as base64, use the `read_binary` tool: read_binary(file_path: str) -> str
+        
         
         When using `exec_py`:
-        - You do NOT need to import pandas (pd), numpy (np), json, math, re, datetime, geopy, fitz, pymupdf, folium, httpx, scipy, scikit-network (sknetwork) or networkx. They are pre-imported.
-        - You do NOT need to import PIL. It is pre-imported as Image, ImageDraw, ImageFont.
-        - For scraping, try using the `visit_website` tool for website visits first, but for API requests use `httpx` with `exec_py` tool.
-        - You MUST assign your final answer to a variable named `result`.
-        - Example: result = pd.read_csv('file.csv')['value'].mean()
+        
+        Available Pre-imported Modules (50+ modules):
+        
+        File & Archive Operations:
+        - base64, zipfile, tarfile, gzip, shutil, os, glob, tempfile, pathlib, io
+        
+        Data Formats:
+        - csv, json, pickle
+        
+        Data Structures & Algorithms:
+        - collections, itertools, functools, copy, heapq, bisect, array
+        
+        Math & Numbers:
+        - math, random, statistics, decimal, fractions
+        
+        Text & String Processing:
+        - re, string, textwrap
+        
+        Date & Time:
+        - datetime, time, calendar
+        
+        Network & Web:
+        - urllib, hashlib, hmac, secrets
+        
+        System & OS:
+        - sys, platform, subprocess
+        
+        Utilities:
+        - operator, typing, dataclasses, enum, contextlib, warnings, logging
+        
+        Third-party:
+        - pd (pandas), np (numpy), httpx, geopy, fitz/pymupdf, folium
+        - scipy, sknetwork, networkx, Image/ImageDraw/ImageFont (PIL)
+        
+        IMPORTANT:
+        - You do NOT need to import any of these modules
+        - For scraping, use `visit_website` tool first, but for API requests use `httpx` with `exec_py`
+        - You MUST assign your final answer to a variable named `result`
+        
+        Examples:
+        - Basic: result = pd.read_csv('file.csv')['value'].mean()
+        - ZIP extraction: 
+          with zipfile.ZipFile('file.zip', 'r') as z:
+              z.extractall('extracted/')
+          result = os.listdir('extracted/')
+        - TAR extraction:
+          with tarfile.open('file.tar.gz', 'r:gz') as tar:
+              tar.extractall('extracted/')
+          result = glob.glob('extracted/**/*.txt', recursive=True)
+        - File operations:
+          files = [f for f in os.listdir('.') if f.endswith('.log')]
+          result = len(files)
+        - Random sampling:
+          result = random.sample(range(100), 10)
+        - Statistics:
+          data = [1, 2, 3, 4, 5]
+          result = statistics.mean(data)
+        
         
         Calculate the answer.
         
@@ -159,7 +226,10 @@ async def solve_quiz(start_url: str, email: str, secret: str):
         
         agent = create_react_agent(llm, solve_tools)
         
-        result = await agent.ainvoke({"messages": [HumanMessage(content=solving_prompt)]})
+        result = await agent.ainvoke(
+            {"messages": [HumanMessage(content=solving_prompt)]},
+            config={"recursion_limit": 100}
+        )
         # pdb.set_trace()
         answer_str = result["messages"][-1].content.strip()
         try:
@@ -181,10 +251,9 @@ async def solve_quiz(start_url: str, email: str, secret: str):
             "answer": answer
         }
         
-        submit_url = submission_details.get("submission_url")
-        if not submit_url:
-            # Fallback if extraction failed
-            submit_url = "https://tds-llm-analysis.s-anand.net/submit" 
+        # Always use the correct submission endpoint
+        # The extraction agent sometimes incorrectly identifies the page URL as the submission URL
+        submit_url = "https://tds-llm-analysis.s-anand.net/submit" 
         
         logger.info(f"Submitting with {len(cookies)} cookies and referer {current_url}")
         response_text = submit_answer(submit_url, payload, cookies=cookies, referer=current_url)
@@ -243,6 +312,6 @@ async def solve_quiz(start_url: str, email: str, secret: str):
     
     logger.info("Request completed!")
     ## Buffering to ensure that the last log is written to the HF dataset
-    for _ in range(100):
+    for _ in range(10):
         logger.info("0"*104+"\n")
 

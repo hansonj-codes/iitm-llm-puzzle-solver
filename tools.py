@@ -298,16 +298,45 @@ def exec_py(code: str) -> str:
     """
     Execute user-provided Python code in a restricted namespace.
     
-    Pre-imported modules available in the namespace:
-    - pd (pandas)
-    - np (numpy)
-    - json
-    - math
-    - re
-    - datetime
-    - httpx
+    Pre-imported modules available (50+ modules):
     
-    You do NOT need to import these.
+    File & Archive Operations:
+    - base64, zipfile, tarfile, gzip, shutil
+    - os, glob, tempfile, pathlib, io
+    
+    Data Formats:
+    - csv, json, pickle
+    
+    Data Structures & Algorithms:
+    - collections, itertools, functools, copy
+    - heapq, bisect, array
+    
+    Math & Numbers:
+    - math, random, statistics, decimal, fractions
+    
+    Text & String Processing:
+    - re, string, textwrap
+    
+    Date & Time:
+    - datetime, time, calendar
+    
+    Network & Web:
+    - urllib, hashlib, hmac, secrets
+    
+    System & OS:
+    - sys, platform, subprocess
+    
+    Utilities:
+    - operator, typing, dataclasses, enum
+    - contextlib, warnings, logging
+    
+    Third-party:
+    - pd (pandas), np (numpy)
+    - httpx, geopy, fitz/pymupdf, folium
+    - scipy, sknetwork, networkx
+    - Image, ImageDraw, ImageFont (from PIL)
+    
+    You do NOT need to import any of these modules.
     
     IMPORTANT: Assign the final answer/result to a variable named `result`.
     Example:
@@ -315,16 +344,75 @@ def exec_py(code: str) -> str:
     """
     # Do not allow import statements — you can detect that and reject
     if "import " in code:
-        return "Rejected: import statements are not allowed. Use pre-imported modules: pd, np, json, math, re, datetime, httpx, base64, geopy etc."
+        return "Rejected: import statements are not allowed. Use pre-imported modules. Available: zipfile, tarfile, gzip, shutil, os, glob, tempfile, pathlib, io, csv, json, pickle, collections, itertools, functools, copy, heapq, bisect, array, math, random, statistics, decimal, fractions, re, string, textwrap, datetime, time, calendar, urllib, hashlib, hmac, secrets, sys, platform, subprocess, operator, typing, dataclasses, enum, contextlib, warnings, logging, base64, pd, np, httpx, geopy, fitz, folium, scipy, sknetwork, networkx, Image, etc."
 
     try:
+        # Standard library imports - File & Archive Operations
         import base64
+        import zipfile
+        import tarfile
+        import gzip
+        import shutil
+        import os
+        import glob
+        import tempfile
+        import pathlib
+        import io
+        
+        # Standard library imports - Data Formats
+        import csv
+        import json
+        import pickle
+        
+        # Standard library imports - Data Structures & Algorithms
+        import collections
+        import itertools
+        import functools
+        import copy
+        import heapq
+        import bisect
+        import array
+        
+        # Standard library imports - Math & Numbers
+        import math
+        import random
+        import statistics
+        import decimal
+        import fractions
+        
+        # Standard library imports - Text & String Processing
+        import re
+        import string
+        import textwrap
+        
+        # Standard library imports - Date & Time
+        import datetime
+        import time
+        import calendar
+        
+        # Standard library imports - Network & Web
+        import urllib
+        import hashlib
+        import hmac
+        import secrets
+        
+        # Standard library imports - System & OS
+        import sys
+        import platform
+        import subprocess
+        
+        # Standard library imports - Utilities
+        import operator
+        import typing
+        import dataclasses
+        import enum
+        import contextlib
+        import warnings
+        import logging
+        
+        # Third-party imports
         import pandas as pd
         import numpy as np
-        import json
-        import math
-        import re
-        import datetime
         import httpx
         import geopy
         import fitz # pymupdf
@@ -383,13 +471,73 @@ def exec_py(code: str) -> str:
         }
         safe_globals = {
             "__builtins__": safe_builtins,
-            "pd": pd,
+            
+            # File & Archive Operations
             "base64": base64,
-            "np": np,
+            "zipfile": zipfile,
+            "tarfile": tarfile,
+            "gzip": gzip,
+            "shutil": shutil,
+            "os": os,
+            "glob": glob,
+            "tempfile": tempfile,
+            "pathlib": pathlib,
+            "io": io,
+            
+            # Data Formats
+            "csv": csv,
             "json": json,
+            "pickle": pickle,
+            
+            # Data Structures & Algorithms
+            "collections": collections,
+            "itertools": itertools,
+            "functools": functools,
+            "copy": copy,
+            "heapq": heapq,
+            "bisect": bisect,
+            "array": array,
+            
+            # Math & Numbers
             "math": math,
+            "random": random,
+            "statistics": statistics,
+            "decimal": decimal,
+            "fractions": fractions,
+            
+            # Text & String Processing
             "re": re,
+            "string": string,
+            "textwrap": textwrap,
+            
+            # Date & Time
             "datetime": datetime,
+            "time": time,
+            "calendar": calendar,
+            
+            # Network & Web
+            "urllib": urllib,
+            "hashlib": hashlib,
+            "hmac": hmac,
+            "secrets": secrets,
+            
+            # System & OS
+            "sys": sys,
+            "platform": platform,
+            "subprocess": subprocess,
+            
+            # Utilities
+            "operator": operator,
+            "typing": typing,
+            "dataclasses": dataclasses,
+            "enum": enum,
+            "contextlib": contextlib,
+            "warnings": warnings,
+            "logging": logging,
+            
+            # Third-party modules
+            "pd": pd,
+            "np": np,
             "httpx": httpx,
             "geopy": geopy,
             "fitz": fitz,
